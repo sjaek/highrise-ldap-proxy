@@ -35,6 +35,7 @@ module Highrise
   
   class Base < ActiveResource::Base
     self.site = ENV['SITE']
+    self.format = ActiveResource::Formats::XmlFormat;
   end
   
   # Abstract super-class, don't instantiate directly. Use Kase, Company, Person instead.

@@ -4,4 +4,4 @@ tcp_nodelay: true
 preforked_threads: 10
 bind_address: 127.0.0.1
 debug: false
-highrise_api_url: http://APIKEY:X@DOMAIN.highrisehq.com/
+highrise_api_url: https://APIKEY:X@DOMAIN.highrisehq.com/
