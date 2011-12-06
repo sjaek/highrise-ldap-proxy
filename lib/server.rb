@@ -1,5 +1,9 @@
 $:.unshift File.join(File.dirname(__FILE__))
 
+Dir.glob(File.join(File.dirname(__FILE__), "..", "vendor", "gems", "*", "lib")).each do |lib|
+  $LOAD_PATH.unshift(File.expand_path(lib))
+end
+
 %w( highrise
     highrise_ldap_extensions
     yaml 
