@@ -22,7 +22,7 @@ module ActiveResource
       
     def _site 
       if (Thread.current[:connection]) 
-          @@siteconfig.gsub("{USERNAME}", Thread.current[:connection].username).gsub("{PASSWORD}", Thread.current[:connection].password)
+          @@siteconfig.gsub("{{SUBDOMAIN}}", Thread.current[:connection].username).gsub("{{APIKEY}}", Thread.current[:connection].password)
       else
           @@siteconfig
       end
