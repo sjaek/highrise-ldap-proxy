@@ -14,7 +14,8 @@ class Server
 
   class Connection
     attr_reader :binddn, :version, :opt
-
+    attr_accessor :username, :password
+    
     def initialize(io, opt={})
       @io = io
       @opt = opt
@@ -24,8 +25,9 @@ class Server
       @version = 3
       @logger = @opt[:logger] || $stderr
       @ssl = false
-
+      Thread.current[:connection] = self
       startssl if @opt[:ssl_on_connect]
+  
     end
 
     def log(msg)
@@ -86,12 +88,12 @@ class Server
       ocArgs = @opt[:operation_args] || []
       catch(:close) do
         while true
-          begin
+          begin 
             blk = ber_read(@io)
             asn1 = OpenSSL::ASN1::decode(blk)
             # Debugging:
             # puts "Request: #{blk.unpack("H*")}\n#{asn1.inspect}" if $debug
-
+           
             raise LDAP::ResultError::ProtocolError, "LDAPMessage must be SEQUENCE" unless asn1.is_a?(OpenSSL::ASN1::Sequence)
             raise LDAP::ResultError::ProtocolError, "Bad Message ID" unless asn1.value[0].is_a?(OpenSSL::ASN1::Integer)
             messageId = asn1.value[0].value
@@ -105,7 +107,7 @@ class Server
             if c.is_a?(OpenSSL::ASN1::ASN1Data) and c.tag_class == :APPLICATION and c.tag == 0
               controls = c.value
             end
-
+            
             case protocolOp.tag
             when 0 # BindRequest
               abandon_all
@@ -129,9 +131,9 @@ class Server
               # @active_reqs[thrm]. It's not a problem, because abandon isn't
               # guaranteed to work anyway. Doing it this way ensures that
               # @active_reqs does not leak memory on a long-lived connection.
-
-              Thread.new(messageId,protocolOp,controls) do |thrm,thrp,thrc|
+              Thread.new(messageId,protocolOp,controls,self) do |thrm,thrp,thrc,conn|
                 begin
+                  Thread.current[:connection] = conn
                   @active_reqs[thrm] = Thread.current
                   operationClass.new(self,thrm,*ocArgs).do_search(thrp, thrc)
                 ensure
@@ -140,8 +142,9 @@ class Server
               end
 
             when 6 # ModifyRequest
-              Thread.new(messageId,protocolOp,controls) do |thrm,thrp,thrc|
+              Thread.new(messageId,protocolOp,controls,self) do |thrm,thrp,thrc,conn|
                 begin
+                  Thread.current[:connection] = conn
                   @active_reqs[thrm] = Thread.current
                   operationClass.new(self,thrm,*ocArgs).do_modify(thrp, thrc)
                 ensure
@@ -150,8 +153,9 @@ class Server
               end
 
             when 8 # AddRequest
-              Thread.new(messageId,protocolOp,controls) do |thrm,thrp,thrc|
+              Thread.new(messageId,protocolOp,controls,self) do |thrm,thrp,thrc,conn|
                 begin
+                  Thread.current[:connection] = conn
                   @active_reqs[thrm] = Thread.current
                   operationClass.new(self,thrm,*ocArgs).do_add(thrp, thrc)
                 ensure
@@ -160,8 +164,9 @@ class Server
               end
 
             when 10 # DelRequest
-              Thread.new(messageId,protocolOp,controls) do |thrm,thrp,thrc|
+              Thread.new(messageId,protocolOp,controls,self) do |thrm,thrp,thrc,conn|
                 begin
+                  Thread.current[:connection] = conn
                   @active_reqs[thrm] = Thread.current
                   operationClass.new(self,thrm,*ocArgs).do_del(thrp, thrc)
                 ensure
@@ -170,8 +175,9 @@ class Server
               end
 
             when 12 # ModifyDNRequest
-              Thread.new(messageId,protocolOp,controls) do |thrm,thrp,thrc|
+              Thread.new(messageId,protocolOp,controls,self) do |thrm,thrp,thrc,conn|
                 begin
+                  Thread.current[:connection] = conn
                   @active_reqs[thrm] = Thread.current
                   operationClass.new(self,thrm,*ocArgs).do_modifydn(thrp, thrc)
                 ensure
@@ -180,8 +186,9 @@ class Server
               end
 
             when 14 # CompareRequest
-              Thread.new(messageId,protocolOp,controls) do |thrm,thrp,thrc|
+              Thread.new(messageId,protocolOp,controls,self) do |thrm,thrp,thrc,conn|
                 begin
+                  Thread.current[:connection] = conn
                   @active_reqs[thrm] = Thread.current
                   operationClass.new(self,thrm,*ocArgs).do_compare(thrp, thrc)
                 ensure

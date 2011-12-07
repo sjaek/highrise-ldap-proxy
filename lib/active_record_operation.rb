@@ -18,10 +18,10 @@ class ActiveRecordOperation < LDAP::Server::Operation
     # This is needed to force the ruby ldap server to return our parameters, 
     # even though the client didn't explicitly ask for them
     @attributes << "*"
-    if basedn != @config[:basedn]
-      @logger.info "Denying request with missmatched basedn (wanted \"#{@config[:basedn]}\", but got \"#{basedn}\")"
-      raise LDAP::ResultError::UnwillingToPerform, "Bad base DN"
-    end
+   #if basedn != @config[:basedn]
+   #  @logger.info "Denying request with missmatched basedn (wanted \"#{@config[:basedn]}\", but got \"#{basedn}\")"
+   #  raise LDAP::ResultError::UnwillingToPerform, "Bad base DN"
+   #end
 
     if scope == LDAP::Server::BaseObject
       @logger.info "Denying request for BaseObject: #{filter.inspect}"

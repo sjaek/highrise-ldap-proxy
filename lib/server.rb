@@ -76,7 +76,7 @@ class Server
     
     logger.info "Attaching to #{@config[:highrise_api_url]}"
     begin
-      Highrise::Base.site = @config[:highrise_api_url]
+      ActiveResource::SiteConfig.config = @config[:highrise_api_url]
     rescue Exception => e
       logger.info "Exception caught: #{e}"
       exit

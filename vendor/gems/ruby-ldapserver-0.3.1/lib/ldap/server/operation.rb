@@ -193,7 +193,6 @@ class Server
       dn = protocolOp.value[1].value
       dn = nil if dn == ""
       authentication = protocolOp.value[2]
-
       case authentication.tag   # tag_class == :CONTEXT_SPECIFIC (check why)
       when 0
         simple_bind(version, dn, authentication.value)
@@ -421,12 +420,14 @@ class Server
     # Override this method in your own subclass.
 
     def simple_bind(version, dn, password)
+      @connection.username = dn
+      @connection.password = password
       if version != 3
         raise LDAP::ResultError::ProtocolError, "version 3 only"
       end
-      if dn
-        raise LDAP::ResultError::InappropriateAuthentication, "This server only supports anonymous bind"
-      end
+      #if dn
+      #  raise LDAP::ResultError::InappropriateAuthentication, "This server only supports anonymous bind"
+      #end
     end
 
     # Handle a search request; override this.

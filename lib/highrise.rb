@@ -1,7 +1,59 @@
 require 'rubygems'
-
+require 'uri'
 gem 'activeresource'
 require 'active_resource'
+
+module ActiveResource
+  
+  class SiteConfig
+    @@siteconfig = nil;
+
+    def self.config
+        @@siteconfig
+    end
+    def self.config=(val)
+        @@siteconfig = val
+    end
+
+    def site 
+      Thread.current[:parsedsite] = URI.parser.parse(_site) unless Thread.current[:parsedsite]
+      Thread.current[:parsedsite]
+    end
+      
+    def _site 
+      if (Thread.current[:connection]) 
+          @@siteconfig.gsub("{USERNAME}", Thread.current[:connection].username).gsub("{PASSWORD}", Thread.current[:connection].password)
+      else
+          @@siteconfig
+      end
+    end
+  end
+  
+  class Base 
+    class << self 
+        alias :_connection_aliased :connection 
+    end
+      
+    self.format = ActiveResource::Formats::XmlFormat
+    @@siteconfig = ActiveResource::SiteConfig.new
+    def self.site 
+      @@siteconfig.site
+    end
+    def self.user
+      self.site.user
+    end
+
+    def self.password
+      self.site.password
+    end
+  
+    def self.connection(refresh = true) 
+      self._connection_aliased(true)
+    end
+  end
+  
+
+end
 
 module Highrise
   module Pagination
@@ -31,11 +83,11 @@ module Highrise
       end
     end
   end
+
   
   
   class Base < ActiveResource::Base
-    self.site = ENV['SITE']
-    self.format = ActiveResource::Formats::XmlFormat;
+  
   end
   
   # Abstract super-class, don't instantiate directly. Use Kase, Company, Person instead.
